@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:4000/api';
+const API_BASE = 'https://pettycashbe-production.up.railway.app/api';
 
 function getToken() {
   if (typeof window !== 'undefined') {
