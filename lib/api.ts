@@ -47,6 +47,9 @@ export const api = {
     update: (id: number, data: any) => apiFetch(`/employees/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
     delete: (id: number) => apiFetch(`/employees/${id}`, { method: 'DELETE' }),
   },
+  budgetItems: {
+    list: () => apiFetch('/budget-items'),
+  },
   assignments: {
     list: () => apiFetch('/assignments'),
     create: (data: any) => apiFetch('/assignments', { method: 'POST', body: JSON.stringify(data) }),
@@ -54,7 +57,13 @@ export const api = {
   payments: {
     list: () => apiFetch('/payments'),
     create: (formData: FormData) =>
-      apiFetch('/payments', { method: 'POST', body: formData }),
+      apiFetch('/payments', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Idempotency-Key': crypto.randomUUID()
+        }
+      }),
   },
   dashboard: {
     stats: () => apiFetch('/dashboard'),

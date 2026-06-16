@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { api } from '@/lib/api';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useRouter } from 'next/navigation';
 import {
-  Upload, Camera, X, Loader2, Check, AlertCircle, ImageIcon, Receipt
+  Upload, Camera, X, Loader2, Check, AlertCircle, ImageIcon, Receipt, Briefcase
 } from 'lucide-react';
 
 export default function NewPaymentPage() {
@@ -13,12 +13,25 @@ export default function NewPaymentPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
-  const [form, setForm] = useState({ vendorNumber: '', amount: '', reason: '' });
+  const [form, setForm] = useState({ vendorNumber: '', amount: '', reason: '', assignmentId: '', budgetItemName: '' });
+  const [assignments, setAssignments] = useState<any[]>([]);
   const [images, setImages] = useState<File[]>([]);
   const [previews, setPreviews] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
+
+  useEffect(() => {
+    const loadAssignments = async () => {
+      try {
+        const data = await api.assignments.list();
+        setAssignments(data);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadAssignments();
+  }, []);
 
   const handleFiles = (files: FileList | null) => {
     if (!files) return;
@@ -45,6 +58,9 @@ export default function NewPaymentPage() {
       formData.append('vendorNumber', form.vendorNumber);
       formData.append('amount', form.amount);
       formData.append('reason', form.reason);
+      formData.append('assignmentId', form.assignmentId);
+      if (form.budgetItemName) formData.append('budgetItemName', form.budgetItemName);
+      
       images.forEach(img => formData.append('images', img));
       await api.payments.create(formData);
       setSuccess(true);
@@ -55,6 +71,9 @@ export default function NewPaymentPage() {
       setSubmitting(false);
     }
   };
+
+  const selectedAssignment = assignments.find(a => a.id === Number(form.assignmentId));
+  const authorizedItems = selectedAssignment?.authorizedItems || [];
 
   return (
     <DashboardLayout>
@@ -84,6 +103,23 @@ export default function NewPaymentPage() {
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Select Allocation <span className="text-red-400">*</span></label>
+                <select
+                  required
+                  value={form.assignmentId}
+                  onChange={e => setForm(p => ({ ...p, assignmentId: e.target.value, budgetItemName: '' }))}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 bg-gray-50 focus:bg-white transition-colors"
+                >
+                  <option value="">Choose an active petty cash allocation...</option>
+                  {assignments.map(a => (
+                    <option key={a.id} value={a.id}>
+                      RWF {a.amount.toLocaleString()} - Assigned on {new Date(a.createdAt).toLocaleDateString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Vendor Number <span className="text-red-400">*</span></label>
                 <input
@@ -106,6 +142,25 @@ export default function NewPaymentPage() {
                   onChange={e => setForm(p => ({ ...p, amount: e.target.value }))}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 bg-gray-50 focus:bg-white transition-colors"
                 />
+              </div>
+
+              <div className="sm:col-span-2">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Purpose / Budget Item</label>
+                <input
+                  type="text"
+                  list="authorized-budget-items"
+                  placeholder="Select or type a purpose..."
+                  value={form.budgetItemName}
+                  onChange={e => setForm(p => ({ ...p, budgetItemName: e.target.value }))}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 bg-gray-50 focus:bg-white transition-colors"
+                  disabled={!form.assignmentId}
+                />
+                <datalist id="authorized-budget-items">
+                  {authorizedItems.map((item: any) => (
+                    <option key={item.id} value={item.name} />
+                  ))}
+                </datalist>
+                <p className="text-[10px] text-gray-400 mt-1">You can select from authorized items or type a custom purpose.</p>
               </div>
             </div>
 
