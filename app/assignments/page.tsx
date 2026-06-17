@@ -14,6 +14,7 @@ import {
   Check,
   CalendarDays,
   ChevronsUpDown,
+  Search,
 } from "lucide-react";
 import {
   Command,
@@ -64,6 +65,7 @@ export default function AssignmentsPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [employeeOpen, setEmployeeOpen] = useState(false);
+  const [search, setSearch] = useState("");
 
   const fetchAssignments = async (month?: string) => {
     setLoading(true);
@@ -147,7 +149,13 @@ export default function AssignmentsPage() {
     }
   };
 
-  const totalAssigned = assignments.reduce((sum, a) => sum + a.amount, 0);
+  const filtered = assignments.filter((a) =>
+    a.assignedTo.name.toLowerCase().includes(search.toLowerCase()) ||
+    a.assignedTo.email.toLowerCase().includes(search.toLowerCase()) ||
+    (a.authorizedItems && a.authorizedItems.some((i) => i.name.toLowerCase().includes(search.toLowerCase())))
+  );
+
+  const totalAssigned = filtered.reduce((sum, a) => sum + a.amount, 0);
   const selectedEmployee = employees.find(
     (e) => String(e.id) === form.assignedToId
   );
@@ -194,19 +202,31 @@ export default function AssignmentsPage() {
           }} 
         />
 
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search by employee, email, or authorized purpose..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
+          />
+        </div>
+
         {/* Cards */}
         {loading ? (
           <div className="py-16 flex items-center justify-center">
             <Loader2 className="w-6 h-6 text-primary animate-spin" />
           </div>
-        ) : assignments.length === 0 ? (
+        ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center text-gray-400">
             <Wallet className="w-8 h-8 mx-auto mb-2 opacity-40" />
-            <p className="text-sm">No assignments yet</p>
+            <p className="text-sm">No assignments found</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {assignments.map((a) => (
+            {filtered.map((a) => (
               <div
                 key={a.id}
                 className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition-shadow"

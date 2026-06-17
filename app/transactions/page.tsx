@@ -1,9 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api, API_BASE } from '@/lib/api';
+import { api, UPLOADS_BASE } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
+import MonthScroller from '@/components/MonthScroller';
 import { Receipt, Search, Loader2, ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Payment {
@@ -22,10 +23,19 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+  });
 
   useEffect(() => {
-    api.payments.list().then(setPayments).catch(console.error).finally(() => setLoading(false));
-  }, []);
+    setLoading(true);
+    api.payments.list({ month: selectedMonth })
+      .then(setPayments)
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [selectedMonth]);
 
   const filtered = payments.filter(p =>
     p.reason.toLowerCase().includes(search.toLowerCase()) ||
@@ -47,6 +57,17 @@ export default function TransactionsPage() {
             </p>
           </div>
         </div>
+
+        {/* Timeline Filter */}
+        <MonthScroller 
+          year={selectedYear} 
+          value={selectedMonth} 
+          onChange={(val) => {
+            const parts = val.split('-');
+            setSelectedYear(Number(parts[0]));
+            setSelectedMonth(val);
+          }} 
+        />
 
         {/* Search */}
         <div className="relative">
@@ -121,12 +142,12 @@ export default function TransactionsPage() {
                         )}
                         {p.images.length > 0 && (
                           <div>
-                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Receipts</p>
+                            <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Supporting documents</p>
                             <div className="flex flex-wrap gap-2">
                               {p.images.map((img, i) => (
-                                <a key={i} href={`${API_BASE}${img}`} target="_blank" rel="noreferrer">
+                                <a key={i} href={`${UPLOADS_BASE}${img}`} target="_blank" rel="noreferrer">
                                   <img
-                                    src={`${API_BASE}${img}`}
+                                    src={`${UPLOADS_BASE}${img}`}
                                     alt={`Receipt ${i + 1}`}
                                     className="w-20 h-20 object-cover rounded-xl border border-gray-200 hover:opacity-80 transition-opacity"
                                   />

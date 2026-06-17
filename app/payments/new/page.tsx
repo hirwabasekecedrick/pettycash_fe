@@ -265,10 +265,9 @@ export default function NewPaymentPage() {
             {/* Reason */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Reason / Description <span className="text-red-400">*</span>
+                Reason / Description
               </label>
               <textarea
-                required
                 rows={3}
                 placeholder="Describe what the expense was for…"
                 value={form.reason}
@@ -338,7 +337,7 @@ export default function NewPaymentPage() {
               </div>
             ) : (
               <p className="text-xs text-gray-400 text-center py-2">
-                No receipts attached yet
+                No supporting documents attached yet
               </p>
             )}
           </div>

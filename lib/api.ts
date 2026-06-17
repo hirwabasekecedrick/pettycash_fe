@@ -1,4 +1,5 @@
 export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+export const UPLOADS_BASE = API_BASE.replace(/\/api$/, '');
 
 function getToken() {
   if (typeof window !== 'undefined') {
@@ -61,7 +62,10 @@ export const api = {
     create: (data: any) => apiFetch('/assignments', { method: 'POST', body: JSON.stringify(data) }),
   },
   payments: {
-    list: () => apiFetch('/payments'),
+    list: (params?: { month?: string }) => {
+      const qs = params?.month ? `?month=${params.month}` : '';
+      return apiFetch(`/payments${qs}`);
+    },
     create: (formData: FormData) =>
       apiFetch('/payments', {
         method: 'POST',
@@ -72,6 +76,9 @@ export const api = {
       }),
   },
   dashboard: {
-    stats: () => apiFetch('/dashboard'),
+    stats: (params?: { month?: string }) => {
+      const qs = params?.month ? `?month=${params.month}` : '';
+      return apiFetch(`/dashboard${qs}`);
+    },
   },
 };
