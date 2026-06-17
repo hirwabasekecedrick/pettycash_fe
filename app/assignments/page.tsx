@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
+import MonthScroller from "@/components/MonthScroller";
 import {
   Plus,
   Wallet,
@@ -48,6 +49,11 @@ export default function AssignmentsPage() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+  });
   const [loadingFormData, setLoadingFormData] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ assignedToId: "", amount: "" });
@@ -59,9 +65,10 @@ export default function AssignmentsPage() {
   const [error, setError] = useState("");
   const [employeeOpen, setEmployeeOpen] = useState(false);
 
-  const fetchAssignments = async () => {
+  const fetchAssignments = async (month?: string) => {
+    setLoading(true);
     try {
-      const assignData = await api.assignments.list();
+      const assignData = await api.assignments.list({ month: month || selectedMonth });
       setAssignments(assignData);
     } catch (e) {
       console.error(e);
@@ -89,8 +96,8 @@ export default function AssignmentsPage() {
 
   useEffect(() => {
     if (!user) return;
-    fetchAssignments();
-  }, [user]);
+    fetchAssignments(selectedMonth);
+  }, [user, selectedMonth]);
 
   const openModal = () => {
     setShowModal(true);
@@ -131,7 +138,7 @@ export default function AssignmentsPage() {
         amount: Number(form.amount),
         authorizedItems,
       });
-      await fetchAssignments();
+      await fetchAssignments(selectedMonth);
       closeModal();
     } catch (err: any) {
       setError(err.message);
@@ -175,6 +182,17 @@ export default function AssignmentsPage() {
             </button>
           )}
         </div>
+
+        {/* Timeline Filter */}
+        <MonthScroller 
+          year={selectedYear} 
+          value={selectedMonth} 
+          onChange={(val) => {
+            const parts = val.split('-');
+            setSelectedYear(Number(parts[0]));
+            setSelectedMonth(val);
+          }} 
+        />
 
         {/* Cards */}
         {loading ? (

@@ -51,9 +51,12 @@ export const api = {
     list: () => apiFetch('/budget-items'),
   },
   assignments: {
-    list: (params?: { mine?: boolean }) => {
-      const qs = params?.mine ? '?mine=true' : '';
-      return apiFetch(`/assignments${qs}`);
+    list: (params?: { mine?: boolean; month?: string }) => {
+      const qs = new URLSearchParams();
+      if (params?.mine) qs.append('mine', 'true');
+      if (params?.month) qs.append('month', params.month);
+      const qsStr = qs.toString();
+      return apiFetch(`/assignments${qsStr ? `?${qsStr}` : ''}`);
     },
     create: (data: any) => apiFetch('/assignments', { method: 'POST', body: JSON.stringify(data) }),
   },
