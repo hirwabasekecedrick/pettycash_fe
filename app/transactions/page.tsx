@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { api } from '@/lib/api';
+import { api, API_BASE } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Receipt, Search, Loader2, ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
@@ -124,9 +124,9 @@ export default function TransactionsPage() {
                             <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Receipts</p>
                             <div className="flex flex-wrap gap-2">
                               {p.images.map((img, i) => (
-                                <a key={i} href={`http://localhost:4000${img}`} target="_blank" rel="noreferrer">
+                                <a key={i} href={`${API_BASE}${img}`} target="_blank" rel="noreferrer">
                                   <img
-                                    src={`http://localhost:4000${img}`}
+                                    src={`${API_BASE}${img}`}
                                     alt={`Receipt ${i + 1}`}
                                     className="w-20 h-20 object-cover rounded-xl border border-gray-200 hover:opacity-80 transition-opacity"
                                   />
