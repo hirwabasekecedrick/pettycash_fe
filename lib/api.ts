@@ -51,7 +51,10 @@ export const api = {
     list: () => apiFetch('/budget-items'),
   },
   assignments: {
-    list: () => apiFetch('/assignments'),
+    list: (params?: { mine?: boolean }) => {
+      const qs = params?.mine ? '?mine=true' : '';
+      return apiFetch(`/assignments${qs}`);
+    },
     create: (data: any) => apiFetch('/assignments', { method: 'POST', body: JSON.stringify(data) }),
   },
   payments: {
