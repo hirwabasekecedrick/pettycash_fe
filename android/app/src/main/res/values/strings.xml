@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">pcashtul</string>
+    <string name="title_activity_main">pcashtul</string>
+    <string name="package_name">com.pcashtul.app</string>
+    <string name="custom_url_scheme">com.pcashtul.app</string>
+</resources>
