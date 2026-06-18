@@ -5,6 +5,7 @@ import { api } from "@/lib/api";
 import { useAuth } from "@/lib/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import MonthScroller from "@/components/MonthScroller";
+import toast from "react-hot-toast";
 import {
   Plus,
   Wallet,
@@ -136,14 +137,16 @@ export default function AssignmentsPage() {
     setError("");
     try {
       await api.assignments.create({
-        assignedToId: Number(form.assignedToId),
+        assignedToId: form.assignedToId,
         amount: Number(form.amount),
         authorizedItems,
       });
       await fetchAssignments(selectedMonth);
+      toast.success("Assignment created successfully");
       closeModal();
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message || "Failed to create assignment");
     } finally {
       setSubmitting(false);
     }
@@ -216,8 +219,10 @@ export default function AssignmentsPage() {
 
         {/* Cards */}
         {loading ? (
-          <div className="py-16 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 text-primary animate-spin" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[1, 2, 3, 4, 5, 6].map(i => (
+              <Skeleton key={i} className="h-40 w-full rounded-2xl" />
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="bg-white rounded-2xl border border-gray-100 py-16 text-center text-gray-400">

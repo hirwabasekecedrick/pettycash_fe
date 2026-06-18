@@ -2,7 +2,8 @@
 
 import { useAuth } from '@/lib/AuthContext';
 import { useRouter, usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
+import { useTheme } from '@/components/ThemeProvider';
 import Link from 'next/link';
 import {
   LayoutDashboard,
@@ -14,6 +15,7 @@ import {
   X,
   CreditCard,
   ChevronRight,
+  Settings,
 } from 'lucide-react';
 
 const navItems = [
@@ -22,13 +24,27 @@ const navItems = [
   { href: '/assignments', label: 'Assignments', icon: Wallet, roles: ['ACCOUNTANT'] },
   { href: '/payments/new', label: 'New Expense', icon: CreditCard, roles: ['EMPLOYEE', 'ACCOUNTANT'] },
   { href: '/transactions', label: 'Transactions', icon: Receipt, roles: ['EMPLOYEE', 'ACCOUNTANT'] },
+  { href: '/settings', label: 'Theme Settings', icon: Settings, roles: ['ACCOUNTANT'] },
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, isLoading } = useAuth();
+  const { theme } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const themeStyle = useMemo(() => ({
+    '--primary': theme?.primaryColor || undefined,
+    '--secondary': theme?.secondaryColor || undefined,
+    '--accent': theme?.accentColor || undefined,
+    '--background': theme?.backgroundColor || undefined,
+    '--foreground': theme?.textColor || undefined,
+    '--success': theme?.successColor || undefined,
+    '--warning': theme?.warningColor || undefined,
+    '--destructive': theme?.errorColor || undefined,
+    '--error': theme?.errorColor || undefined,
+  } as React.CSSProperties), [theme]);
 
   useEffect(() => {
     if (!isLoading && !user) {
@@ -50,7 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const allowed = navItems.filter(item => item.roles.includes(user.role));
 
   return (
-    <div className="min-h-screen flex bg-gray-50">
+    <div className="min-h-screen flex bg-gray-50" style={themeStyle}>
       {/* Mobile overlay */}
       {sidebarOpen && (
         <div

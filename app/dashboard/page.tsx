@@ -107,7 +107,7 @@ export default function DashboardPage() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Welcome banner */}
-        <div className="rounded-2xl bg-gradient-to-r from-primary to-[#00c960] p-6 text-white">
+        <div className="rounded-2xl bg-gradient-to-r from-primary to-primary p-6 text-white">
           <p className="text-sm font-medium opacity-80">Welcome back </p>
           <h1 className="text-2xl font-bold mt-1">{user?.name}</h1>
           <p className="text-sm opacity-70 mt-1 capitalize">{user?.role.toLowerCase()} · {user?.department || 'General'}</p>

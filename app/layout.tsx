@@ -33,6 +33,9 @@ const montserrat = localFont({
     },
   ],
 });
+import { Toaster } from "react-hot-toast";
+import { ThemeProvider } from "@/components/ThemeProvider";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -41,7 +44,12 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${montserrat.variable} h-full antialiased`}>
       <body className={`${montserrat.className} min-h-full flex flex-col`}>
-        <AuthProvider>{children}</AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            {children}
+            <Toaster position="top-right" />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

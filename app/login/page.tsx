@@ -5,6 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useRouter } from 'next/navigation';
 import { Lock, Mail, Loader2 } from 'lucide-react';
 import { API_BASE } from '@/lib/api';
+import toast from 'react-hot-toast';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -33,11 +34,12 @@ export default function LoginPage() {
       }
 
       login(data.token, data.user);
-      
+      toast.success("Welcome back!");
       // Redirect based on role or just to dashboard
       router.push('/dashboard');
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message || 'Login failed');
     } finally {
       setIsSubmitting(false);
     }

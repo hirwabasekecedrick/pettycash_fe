@@ -5,6 +5,7 @@ import { api, UPLOADS_BASE } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import MonthScroller from '@/components/MonthScroller';
+import { Skeleton } from '@/components/ui/skeleton';
 import { Receipt, Search, Loader2, ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Payment {
@@ -84,8 +85,10 @@ export default function TransactionsPage() {
         {/* List */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {loading ? (
-            <div className="py-16 flex items-center justify-center">
-              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+            <div className="p-5 space-y-4">
+              {[1, 2, 3, 4, 5].map(i => (
+                <Skeleton key={i} className="h-[72px] w-full rounded-xl" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-gray-400">

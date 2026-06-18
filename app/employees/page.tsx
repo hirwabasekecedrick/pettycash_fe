@@ -3,8 +3,10 @@
 import { useEffect, useState } from 'react';
 import { api } from '@/lib/api';
 import DashboardLayout from '@/components/DashboardLayout';
+import { Skeleton } from '@/components/ui/skeleton';
+import toast from 'react-hot-toast';
 import {
-  Plus, Pencil, Trash2, Search, Loader2, X, Check, AlertCircle, User
+  Plus, Pencil, Trash2, Search, Loader2, X, Check, AlertCircle, User, Copy, Eye, EyeOff
 } from 'lucide-react';
 
 interface Employee {
@@ -17,7 +19,13 @@ interface Employee {
   createdAt: string;
 }
 
-const emptyForm = { name: '', email: '', password: '', phone: '', department: '', role: 'EMPLOYEE' };
+const emptyForm = {
+  name: '',
+  email: '',
+  phone: '',
+  department: '',
+  role: 'EMPLOYEE' as 'EMPLOYEE' | 'ACCOUNTANT',
+};
 
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -29,6 +37,12 @@ export default function EmployeesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
+
+  const [generateNewPwd, setGenerateNewPwd] = useState(false);
+
+  // displayed after create or edit when backend returns a generated password
+  const [generatedPassword, setGeneratedPassword] = useState<string | null>(null);
+  const [showGenPwd, setShowGenPwd] = useState(false);
 
   const fetchEmployees = async () => {
     try {
@@ -45,15 +59,17 @@ export default function EmployeesPage() {
 
   const openCreate = () => {
     setEditing(null);
-    setForm(emptyForm);
+    setForm({ ...emptyForm });
     setError('');
+    setGenerateNewPwd(false);
     setShowModal(true);
   };
 
   const openEdit = (emp: Employee) => {
     setEditing(emp);
-    setForm({ name: emp.name, email: emp.email, password: '', phone: emp.phone || '', department: emp.department || '', role: emp.role });
+    setForm({ name: emp.name, email: emp.email, phone: emp.phone || '', department: emp.department || '', role: emp.role });
     setError('');
+    setGenerateNewPwd(false);
     setShowModal(true);
   };
 
@@ -63,16 +79,33 @@ export default function EmployeesPage() {
     setError('');
     try {
       if (editing) {
-        const payload: any = { name: form.name, email: form.email, phone: form.phone, department: form.department, role: form.role };
-        if (form.password) payload.password = form.password;
-        await api.employees.update(editing.id, payload);
+        const payload: any = {
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          department: form.department,
+          role: form.role,
+        };
+        if (generateNewPwd) {
+          payload.generateNewPassword = true;
+        }
+        const res = await api.employees.update(editing.id, payload);
+        if (res.generatedPassword) {
+          setGeneratedPassword(res.generatedPassword);
+          setShowGenPwd(false);
+        }
+        toast.success('Employee updated successfully');
       } else {
-        await api.employees.create(form);
+        const res = await api.employees.create(form);
+        setGeneratedPassword(res.generatedPassword);
+        setShowGenPwd(false);
+        toast.success('Employee created successfully');
       }
       await fetchEmployees();
       setShowModal(false);
     } catch (err: any) {
       setError(err.message);
+      toast.error(err.message || 'Failed to save employee');
     } finally {
       setSubmitting(false);
     }
@@ -82,8 +115,10 @@ export default function EmployeesPage() {
     try {
       await api.employees.delete(id);
       setEmployees(prev => prev.filter(e => e.id !== id));
-    } catch (err) {
+      toast.success('Employee deleted successfully');
+    } catch (err: any) {
       console.error(err);
+      toast.error(err.message || 'Failed to delete employee');
     } finally {
       setDeleteId(null);
     }
@@ -127,8 +162,10 @@ export default function EmployeesPage() {
         {/* Table */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {loading ? (
-            <div className="py-16 flex items-center justify-center">
-              <Loader2 className="w-6 h-6 text-primary animate-spin" />
+            <div className="p-5 space-y-4">
+              {[1, 2, 3, 4, 5].map(i => (
+                <Skeleton key={i} className="h-12 w-full rounded-xl" />
+              ))}
             </div>
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-gray-400">
@@ -209,27 +246,42 @@ export default function EmployeesPage() {
                 {[
                   { label: 'Full Name', key: 'name', type: 'text', required: true },
                   { label: 'Email', key: 'email', type: 'email', required: true },
-                  { label: 'Password', key: 'password', type: 'password', required: !editing, placeholder: editing ? 'Leave blank to keep current' : '' },
                   { label: 'Phone', key: 'phone', type: 'tel', required: false },
                   { label: 'Department', key: 'department', type: 'text', required: false },
-                ].map(({ label, key, type, required, placeholder }) => (
+                ].map(({ label, key, type, required }) => (
                   <div key={key}>
                     <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
                     <input
                       type={type}
                       required={required}
-                      placeholder={placeholder}
                       value={(form as any)[key]}
                       onChange={e => setForm(prev => ({ ...prev, [key]: e.target.value }))}
                       className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 bg-gray-50 focus:bg-white transition-colors"
                     />
                   </div>
                 ))}
+
+                {/* Generate new password toggle — only when editing */}
+                {editing && (
+                  <label className="flex items-center gap-3 p-3 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+                    <div
+                      onClick={() => setGenerateNewPwd(v => !v)}
+                      className={`relative w-10 h-5 rounded-full transition-colors ${generateNewPwd ? 'bg-primary' : 'bg-gray-300'}`}
+                    >
+                      <div className={`absolute top-0.5 left-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${generateNewPwd ? 'translate-x-5' : ''}`} />
+                    </div>
+                    <div className="flex-1">
+                      <span className="text-sm font-medium text-gray-700">Generate new password</span>
+                      <p className="text-xs text-gray-400">A new random password will be created for this employee</p>
+                    </div>
+                  </label>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                   <select
                     value={form.role}
-                    onChange={e => setForm(prev => ({ ...prev, role: e.target.value }))}
+                    onChange={e => setForm(prev => ({ ...prev, role: e.target.value as 'EMPLOYEE' | 'ACCOUNTANT' }))}
                     className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 bg-gray-50 focus:bg-white transition-colors"
                   >
                     <option value="EMPLOYEE">Employee</option>
@@ -247,6 +299,66 @@ export default function EmployeesPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Password reveal modal — shown after create or edit-when-pwd-generated */}
+      {generatedPassword && (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-6 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <Check className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-gray-900">
+                  {editing ? 'New Password Generated' : 'Employee Created'}
+                </h3>
+                <p className="text-sm text-gray-500">
+                  {editing
+                    ? 'The employee password has been reset. Share the new password with them.'
+                    : 'Save this password — you will need it to share with the employee.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="relative">
+              <input
+                type={showGenPwd ? 'text' : 'password'}
+                readOnly
+                value={generatedPassword}
+                className="w-full px-3 py-2.5 pr-10 border border-gray-200 rounded-xl text-sm bg-gray-50 text-gray-700 font-mono tracking-wide"
+              />
+              <button
+                type="button"
+                onClick={() => setShowGenPwd(v => !v)}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                tabIndex={-1}
+              >
+                {showGenPwd ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  navigator.clipboard.writeText(generatedPassword);
+                  toast.success('Password copied to clipboard');
+                }}
+                className="flex-1 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+              >
+                <Copy className="w-4 h-4" /> Copy Password
+              </button>
+              <button
+                type="button"
+                onClick={() => setGeneratedPassword(null)}
+                className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                Done
+              </button>
+            </div>
           </div>
         </div>
       )}

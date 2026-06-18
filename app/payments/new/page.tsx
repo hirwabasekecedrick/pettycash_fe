@@ -6,6 +6,7 @@ import { useAuth } from '@/lib/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import { useRouter } from 'next/navigation';
 import { Skeleton } from '@/components/ui/skeleton';
+import toast from 'react-hot-toast';
 import {
   Upload, Camera, X, Loader2, Check, AlertCircle, ImageIcon, Receipt, Tag,
 } from 'lucide-react';
@@ -92,9 +93,11 @@ export default function NewPaymentPage() {
       images.forEach(img => formData.append('images', img));
       await api.payments.create(formData);
       setSuccess(true);
+      toast.success('Payment submitted successfully!');
       setTimeout(() => router.push('/transactions'), 1800);
     } catch (err: any) {
       setError(err.message || 'Failed to submit. Please try again.');
+      toast.error(err.message || 'Failed to submit. Please try again.');
     } finally {
       setSubmitting(false);
     }
