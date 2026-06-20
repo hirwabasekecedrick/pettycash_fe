@@ -1,21 +1,21 @@
 pipeline {
-    agent {
-        docker {
-            image 'node:20-alpine'
-        }
+    agent any
+
+    tools {
+        nodejs 'Node20'
     }
-    
+
     stages {
 
         stage('Checkout') {
             steps {
+                echo '📥 Checking out code...'
                 checkout scm
             }
         }
 
         stage('Setup Node') {
             steps {
-                echo '🟢 Using Node.js environment...'
                 sh 'node -v'
                 sh 'npm -v'
             }
@@ -24,21 +24,26 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo '📦 Installing dependencies...'
-                sh 'npm ci'
+
+                sh '''
+                if [ -f package-lock.json ]; then
+                  npm ci
+                else
+                  npm install
+                fi
+                '''
             }
         }
 
         stage('Lint') {
             steps {
-                echo '🧹 Running linter...'
-                sh 'npm run lint || true'
+                sh 'npm run lint --if-present'
             }
         }
 
         stage('Test') {
             steps {
-                echo '🧪 Running tests...'
-                sh 'npm test || true'
+                sh 'npm run test --if-present'
             }
         }
 
@@ -51,20 +56,33 @@ pipeline {
 
         stage('Archive Build') {
             steps {
-                echo '📦 Archiving build output...'
                 archiveArtifacts artifacts: '.next/**', fingerprint: true
             }
         }
 
-        stage('Deploy (Optional - Docker)') {
+        stage('Docker Build') {
             steps {
-                echo '🚀 Building Docker image...'
+                echo '🐳 Building Docker image...'
 
                 sh '''
-                docker build -t nextjs-app .
-                docker stop nextjs-app || true
-                docker rm nextjs-app || true
-                docker run -d -p 3000:3000 --name nextjs-app nextjs-app
+                docker build -t pettycash-frontend:latest .
+                '''
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                echo '🚀 Deploying container...'
+
+                sh '''
+                docker stop pettycash-frontend || true
+                docker rm pettycash-frontend || true
+
+                docker run -d \
+                  --name pettycash-frontend \
+                  --restart unless-stopped \
+                  -p 3000:3000 \
+                  pettycash-frontend:latest
                 '''
             }
         }
@@ -72,15 +90,14 @@ pipeline {
 
     post {
         success {
-            echo '✅ Build successful!'
+            echo '✅ Deployment successful'
         }
 
         failure {
-            echo '❌ Build failed!'
+            echo '❌ Pipeline failed'
         }
 
         always {
-            echo '🧹 Cleaning workspace...'
             cleanWs()
         }
     }
