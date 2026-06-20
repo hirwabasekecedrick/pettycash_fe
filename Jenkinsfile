@@ -9,15 +9,16 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo 'Checking out code...'
+                echo '📥 Checking out code...'
                 git branch: 'main',
-                    url: 'https://github.com/hirwabasekecedrick/pettycash_fe.git'
+                    credentialsId: 'github-token',
+                    url: 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'
             }
         }
 
         stage('Setup Node') {
             steps {
-                echo 'Using Node.js environment...'
+                echo '🟢 Using Node.js environment...'
                 sh 'node -v'
                 sh 'npm -v'
             }
@@ -25,42 +26,42 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                echo 'Installing dependencies...'
+                echo '📦 Installing dependencies...'
                 sh 'npm ci || npm install'
             }
         }
 
         stage('Lint') {
             steps {
-                echo 'Running linter...'
+                echo '🧹 Running linter...'
                 sh 'npm run lint || true'
             }
         }
 
         stage('Test') {
             steps {
-                echo 'Running tests...'
+                echo '🧪 Running tests...'
                 sh 'npm test || true'
             }
         }
 
         stage('Build Next.js App') {
             steps {
-                echo 'Building Next.js app...'
+                echo '🏗️ Building Next.js app...'
                 sh 'npm run build'
             }
         }
 
         stage('Archive Build') {
             steps {
-                echo 'Archiving build output...'
+                echo '📦 Archiving build output...'
                 archiveArtifacts artifacts: '.next/**', fingerprint: true
             }
         }
 
         stage('Deploy (Optional - Docker)') {
             steps {
-                echo 'Building Docker image...'
+                echo '🚀 Building Docker image...'
 
                 sh '''
                 docker build -t nextjs-app .
