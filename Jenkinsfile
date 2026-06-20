@@ -6,7 +6,6 @@ pipeline {
     }
     
     environment {
-        NODE_ENV = 'production'
     }
 
     stages {
@@ -28,7 +27,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 echo '📦 Installing dependencies...'
-                sh 'npm ci || npm install'
+                sh 'npm ci'
             }
         }
 
