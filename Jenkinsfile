@@ -9,10 +9,7 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo '📥 Checking out code...'
-                git branch: 'main',
-                    credentialsId: 'github-token',
-                    url: 'https://github.com/YOUR_USERNAME/YOUR_REPO.git'
+                checkout scm
             }
         }
 
