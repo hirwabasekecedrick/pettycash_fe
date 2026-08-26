@@ -136,14 +136,14 @@ export default function EmployeesPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h1 className="text-xl font-bold text-gray-900">Employees</h1>
-            <p className="text-sm text-gray-500">{employees.length} member{employees.length !== 1 ? 's' : ''} registered</p>
+            <h1 className="text-xl font-bold text-gray-900">Wallet Holders</h1>
+            <p className="text-sm text-gray-500">{employees.length} registered</p>
           </div>
           <button
             onClick={openCreate}
             className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm"
           >
-            <Plus className="w-4 h-4" /> Add Employee
+            <Plus className="w-4 h-4" /> Add Wallet Holder
           </button>
         </div>
 
@@ -152,7 +152,7 @@ export default function EmployeesPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search employees..."
+            placeholder="Search wallet holders..."
             value={search}
             onChange={e => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
@@ -170,7 +170,7 @@ export default function EmployeesPage() {
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-gray-400">
               <User className="w-8 h-8 mx-auto mb-2 opacity-40" />
-              <p className="text-sm">No employees found</p>
+              <p className="text-sm">No wallet holders found</p>
             </div>
           ) : (
             <div className="overflow-x-auto">

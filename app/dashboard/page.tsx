@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 import { api } from '@/lib/api';
 import DashboardLayout from '@/components/DashboardLayout';
-import MonthScroller from '@/components/MonthScroller';
 import Link from 'next/link';
 import {
   Wallet,
@@ -66,19 +65,14 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-  });
 
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       try {
         const [statsData, paymentsData] = await Promise.all([
-          api.dashboard.stats({ month: selectedMonth }),
-          api.payments.list({ month: selectedMonth }),
+          api.dashboard.stats({}),
+          api.payments.list({}),
         ]);
         setStats(statsData);
         setPayments(paymentsData.slice(0, 5));
@@ -89,7 +83,7 @@ export default function DashboardPage() {
       }
     };
     fetchData();
-  }, [selectedMonth]);
+  }, []);
 
   if (loading) {
     return (
@@ -113,16 +107,7 @@ export default function DashboardPage() {
           <p className="text-sm opacity-70 mt-1 capitalize">{user?.role.toLowerCase()} · {user?.department || 'General'}</p>
         </div>
 
-        {/* Timeline Filter */}
-        <MonthScroller 
-          year={selectedYear} 
-          value={selectedMonth} 
-          onChange={(val) => {
-            const parts = val.split('-');
-            setSelectedYear(Number(parts[0]));
-            setSelectedMonth(val);
-          }} 
-        />
+        {/* Removed Timeline Filter */}
 
         {/* Stats grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -174,7 +159,7 @@ export default function DashboardPage() {
                 <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all">
                   <Users className="w-5 h-5" />
                 </div>
-                <span className="text-sm font-medium text-gray-700">Employees</span>
+                <span className="text-sm font-medium text-gray-700">Wallet Account Holders</span>
               </Link>
 
               <Link href="/assignments"

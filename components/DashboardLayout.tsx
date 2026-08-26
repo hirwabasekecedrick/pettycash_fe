@@ -20,7 +20,7 @@ import {
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['EMPLOYEE', 'ACCOUNTANT'] },
-  { href: '/employees', label: 'Employees', icon: Users, roles: ['ACCOUNTANT'] },
+  { href: '/employees', label: 'Wallet Holders', icon: Users, roles: ['ACCOUNTANT'] },
   { href: '/assignments', label: 'Assignments', icon: Wallet, roles: ['ACCOUNTANT'] },
   { href: '/payments/new', label: 'New Expense', icon: CreditCard, roles: ['EMPLOYEE', 'ACCOUNTANT'] },
   { href: '/transactions', label: 'Transactions', icon: Receipt, roles: ['EMPLOYEE', 'ACCOUNTANT'] },

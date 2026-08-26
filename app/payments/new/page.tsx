@@ -283,7 +283,7 @@ export default function NewPaymentPage() {
           {/* ── Receipt Photos ── */}
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 space-y-4">
             <div className="flex items-center gap-2 text-sm font-semibold text-gray-700">
-              <ImageIcon className="w-4 h-4 text-primary" /> Receipt Photos
+              <ImageIcon className="w-4 h-4 text-primary" /> Supporting Documents
             </div>
 
             <div className="flex gap-3">

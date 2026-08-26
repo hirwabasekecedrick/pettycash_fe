@@ -16,6 +16,7 @@ import {
   CalendarDays,
   ChevronsUpDown,
   Search,
+  UserPlus
 } from "lucide-react";
 import {
   Command,
@@ -67,6 +68,10 @@ export default function AssignmentsPage() {
   const [error, setError] = useState("");
   const [employeeOpen, setEmployeeOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [isCreatingHolder, setIsCreatingHolder] = useState(false);
+  const [newHolderName, setNewHolderName] = useState("");
+  const [newHolderEmail, setNewHolderEmail] = useState("");
+  const [newBudgetItemName, setNewBudgetItemName] = useState("");
 
   const fetchAssignments = async (month?: string) => {
     setLoading(true);
@@ -127,10 +132,35 @@ export default function AssignmentsPage() {
     setAuthorizedItems((prev) => prev.filter((i) => i !== name));
   };
 
+  const handleCreateHolder = async () => {
+    if (!newHolderName || !newHolderEmail) return;
+    try {
+      setLoadingFormData(true);
+      const res = await api.employees.create({ name: newHolderName, email: newHolderEmail });
+      toast.success("Wallet Account Holder created!");
+      setIsCreatingHolder(false);
+      setNewHolderName("");
+      setNewHolderEmail("");
+      await fetchFormData();
+      setForm((prev) => ({ ...prev, assignedToId: String(res.id) }));
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create holder");
+    } finally {
+      setLoadingFormData(false);
+    }
+  };
+
+  const handleAddCustomBudgetItem = () => {
+    if (newBudgetItemName.trim() && !authorizedItems.includes(newBudgetItemName.trim())) {
+      addBudgetItem(newBudgetItemName.trim());
+      setNewBudgetItemName("");
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.assignedToId) {
-      setError("Please select an employee.");
+      setError("Please select a wallet account holder.");
       return;
     }
     setSubmitting(true);
@@ -210,7 +240,7 @@ export default function AssignmentsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search by employee, email, or authorized purpose..."
+            placeholder="Search by wallet account holder, email, or authorized purpose..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-primary/50 text-sm"
@@ -312,10 +342,26 @@ export default function AssignmentsPage() {
 
               {/* ── Employee Combobox ── */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                  Employee <span className="text-red-400">*</span>
-                </label>
-                {loadingFormData ? (
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Wallet Account Holder <span className="text-red-400">*</span>
+                  </label>
+                  {!isCreatingHolder && (
+                    <button type="button" onClick={() => setIsCreatingHolder(true)} className="text-xs text-primary font-semibold flex items-center gap-1 hover:underline">
+                      <UserPlus className="w-3 h-3" /> New Holder
+                    </button>
+                  )}
+                </div>
+                {isCreatingHolder ? (
+                  <div className="p-3 border border-gray-200 rounded-xl bg-gray-50 space-y-3">
+                    <input type="text" placeholder="Full Name" value={newHolderName} onChange={e => setNewHolderName(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <input type="email" placeholder="Email Address" value={newHolderEmail} onChange={e => setNewHolderEmail(e.target.value)} className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50" />
+                    <div className="flex gap-2">
+                      <button type="button" onClick={() => setIsCreatingHolder(false)} className="flex-1 py-1.5 text-xs font-medium text-gray-500 hover:bg-gray-200 bg-gray-100 rounded-lg transition-colors">Cancel</button>
+                      <button type="button" onClick={handleCreateHolder} disabled={!newHolderName || !newHolderEmail || loadingFormData} className="flex-1 py-1.5 text-xs font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50">Create</button>
+                    </div>
+                  </div>
+                ) : loadingFormData ? (
                   <Skeleton className="h-10 w-full rounded-xl" />
                 ) : (
                   <Popover open={employeeOpen} onOpenChange={setEmployeeOpen}>
@@ -338,7 +384,7 @@ export default function AssignmentsPage() {
                           </span>
                         ) : (
                           <span className="text-gray-400">
-                            Search employee...
+                            Search wallet account holder...
                           </span>
                         )}
                         <ChevronsUpDown className="w-4 h-4 text-gray-400 shrink-0" />
@@ -351,7 +397,7 @@ export default function AssignmentsPage() {
                       <Command>
                         <CommandInput placeholder="Search by name or email…" />
                         <CommandList className="max-h-52">
-                          <CommandEmpty>No employee found.</CommandEmpty>
+                          <CommandEmpty>No wallet account holder found.</CommandEmpty>
                           <CommandGroup>
                             {employees.map((emp) => (
                               <CommandItem
@@ -440,6 +486,26 @@ export default function AssignmentsPage() {
                   </div>
                 )}
 
+                {/* Custom Budget Item Input */}
+                <div className="flex gap-2 mb-3">
+                  <input
+                    type="text"
+                    placeholder="Create new purpose..."
+                    value={newBudgetItemName}
+                    onChange={(e) => setNewBudgetItemName(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleAddCustomBudgetItem();
+                      }
+                    }}
+                    className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  />
+                  <button type="button" onClick={handleAddCustomBudgetItem} className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors">
+                    Add
+                  </button>
+                </div>
+
                 {/* Available items pool */}
                 {loadingFormData ? (
                   <div className="flex flex-wrap gap-2">
@@ -454,7 +520,7 @@ export default function AssignmentsPage() {
                 ) : availableItems.length > 0 ? (
                   <div className="border border-gray-200 rounded-xl p-3 bg-gray-50/80">
                     <p className="text-[11px] text-gray-400 mb-2 font-medium uppercase tracking-wide">
-                      Click to add
+                      Click to add existing
                     </p>
                     <div className="flex flex-wrap gap-2">
                       {availableItems.map((item) => (
@@ -471,11 +537,11 @@ export default function AssignmentsPage() {
                   </div>
                 ) : masterBudgetItems.length > 0 ? (
                   <p className="text-xs text-gray-400 italic py-1">
-                    ✓ All budget items have been selected
+                    ✓ All existing budget items have been selected
                   </p>
                 ) : (
                   <p className="text-xs text-gray-400 italic py-1">
-                    No budget items found in the database
+                    No budget items found in the database. Type above to create one.
                   </p>
                 )}
               </div>
