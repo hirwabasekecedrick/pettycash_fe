@@ -124,9 +124,9 @@ export default function TransactionsPage() {
                             <p className="text-xs text-gray-400 font-medium uppercase tracking-wide mb-2">Receipts</p>
                             <div className="flex flex-wrap gap-2">
                               {p.images.map((img, i) => (
-                                <a key={i} href={`https://pettycashbe-production.up.railway.app/${img}`} target="_blank" rel="noreferrer">
+                                <a key={i} href={`https://peti.yoguide.africa/api/${img}`} target="_blank" rel="noreferrer">
                                   <img
-                                    src={`https://pettycashbe-production.up.railway.app${img}`}
+                                    src={`https://peti.yoguide.africa/api/${img}`}
                                     alt={`Receipt ${i + 1}`}
                                     className="w-20 h-20 object-cover rounded-xl border border-gray-200 hover:opacity-80 transition-opacity"
                                   />

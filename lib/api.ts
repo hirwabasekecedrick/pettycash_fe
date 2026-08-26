@@ -1,4 +1,4 @@
-const API_BASE = 'https://pettycashbe-production.up.railway.app/api';
+const API_BASE = 'https://peti.yoguide.africa/api';
 
 function getToken() {
   if (typeof window !== 'undefined') {

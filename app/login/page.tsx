@@ -19,7 +19,7 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('https://pettycashbe-production.up.railway.app/api/auth/login', {
+      const res = await fetch('https://peti.yoguide.africa/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
