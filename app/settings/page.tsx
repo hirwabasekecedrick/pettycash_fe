@@ -5,6 +5,7 @@ import { useTheme } from "@/components/ThemeProvider";
 import DashboardLayout from "@/components/DashboardLayout";
 import toast from "react-hot-toast";
 import { Paintbrush, Loader2, Check } from "lucide-react";
+import { API_BASE } from "@/lib/api";
 
 export default function ThemeSettingsPage() {
   const { theme, setTheme } = useTheme();
@@ -46,7 +47,7 @@ export default function ThemeSettingsPage() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:4000/api/theme", {
+      const res = await fetch(`${API_BASE}/theme`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

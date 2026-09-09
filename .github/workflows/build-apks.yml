@@ -1,0 +1,50 @@
+name: Build APKs
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build-app:
+    name: Build PettyCash Frontend
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      - name: Write .env file
+        run: |
+          ENV="NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}"
+          echo "$ENV" > .env
+          echo "Wrote .env:"
+          grep -c 'NEXT_PUBLIC_API_URL' .env
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Next.js app
+        run: npm run build
+
+      - name: Package standalone app
+        run: |
+          mkdir -p app
+          cp -r .next/standalone/. app/
+          cp -r .next/static app/.next/static
+          cp -r public app/public
+          cd app
+          zip -r ../pettycash-app.zip .
+          cd ..
+
+      - name: Upload app artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pettycash-app-${{ github.run_number }}
+          path: pettycash-app.zip
+          retention-days: 30

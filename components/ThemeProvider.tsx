@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { API_BASE } from "@/lib/api";
 
 interface ThemeContextType {
   theme: any;
@@ -19,7 +20,7 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
       const headers: any = {};
       if (token) headers["Authorization"] = `Bearer ${token}`;
 
-      const res = await fetch("http://localhost:4000/api/theme", { headers });
+      const res = await fetch(`${API_BASE}/theme`, { headers });
       if (res.ok) {
         const data = await res.json();
         if (data) {
