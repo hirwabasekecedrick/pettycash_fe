@@ -37,6 +37,22 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Install Capacitor
+        run: |
+          npm install --save @capacitor/core @capacitor/android
+          npm install --save-dev @capacitor/cli
+
+      - name: Write capacitor.config.json
+        run: |
+          cat > capacitor.config.json << 'CAP'
+          {
+            "appId": "com.pettycash.app",
+            "appName": "PettyCash",
+            "webDir": "out",
+            "server": { "androidScheme": "https" }
+          }
+          CAP
+
       - name: Build static export
         env:
           NEXT_OUTPUT: export
