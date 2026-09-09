@@ -6,8 +6,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-app:
-    name: Build PettyCash Frontend
+  build-apk:
+    name: PettyCash APK
     runs-on: ubuntu-latest
 
     steps:
@@ -19,6 +19,14 @@ jobs:
           cache: npm
           cache-dependency-path: package-lock.json
 
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Write .env file
         run: |
           ENV="NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}"
@@ -29,22 +37,74 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build Next.js app
+      - name: Build static export
+        env:
+          NEXT_OUTPUT: export
         run: npm run build
 
-      - name: Package standalone app
+      - name: Add Android platform + sync
         run: |
-          mkdir -p app
-          cp -r .next/standalone/. app/
-          cp -r .next/static app/.next/static
-          cp -r public app/public
-          cd app
-          zip -r ../pettycash-app.zip .
-          cd ..
+          npx cap add android 2>/dev/null || true
+          npx cap sync android
 
-      - name: Upload app artifact
+      - name: Add Required Permissions to AndroidManifest
+        working-directory: android
+        run: |
+          MANIFEST="app/src/main/AndroidManifest.xml"
+
+          if ! grep -q "android.permission.INTERNET" "$MANIFEST"; then
+            sed -i 's|</manifest>|    <uses-permission android:name="android.permission.INTERNET" />\n</manifest>|' "$MANIFEST"
+          fi
+
+          if ! grep -q "android.permission.CAMERA" "$MANIFEST"; then
+            sed -i 's|</manifest>|    <uses-permission android:name="android.permission.CAMERA" />\n    <uses-feature android:name="android.hardware.camera" />\n    <uses-feature android:name="android.hardware.camera.autofocus" />\n</manifest>|' "$MANIFEST"
+          fi
+
+          echo "Permissions:"
+          grep -E "permission|feature" "$MANIFEST"
+
+      - name: Generate icons
+        if: ${{ hashFiles('public/logo.png') != '' }}
+        run: |
+          sudo apt-get install -y imagemagick -q
+          mkdir -p assets
+          convert public/logo.png -resize 600x600 -background white -gravity center -extent 1024x1024 assets/icon.png
+
+      - name: Bump versionCode
+        working-directory: android
+        run: |
+          sed -i "s/versionCode [0-9]*/versionCode ${{ github.run_number }}/" app/build.gradle
+          grep -n "versionCode" app/build.gradle
+
+      - name: Build debug APK
+        working-directory: android
+        run: |
+          ./gradlew assembleDebug --no-daemon
+
+      - name: Build release APK (signed)
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
+        working-directory: android
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 -d > app/release.keystore
+          ./gradlew assembleRelease --no-daemon \
+            -Pandroid.injected.signing.store.file=$(pwd)/app/release.keystore \
+            -Pandroid.injected.signing.store.password="${{ secrets.KEYSTORE_PASSWORD }}" \
+            -Pandroid.injected.signing.key.alias="${{ secrets.KEY_ALIAS }}" \
+            -Pandroid.injected.signing.key.password="${{ secrets.KEY_PASSWORD }}"
+
+      - name: Stage APK
+        run: |
+          mkdir -p apk-out
+          if [ -f android/app/build/outputs/apk/release/app-release.apk ]; then
+            cp android/app/build/outputs/apk/release/app-release.apk apk-out/PettyCash-latest.apk
+          else
+            cp android/app/build/outputs/apk/debug/app-debug.apk apk-out/PettyCash-debug.apk
+          fi
+          ls -la apk-out/
+
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: pettycash-app-${{ github.run_number }}
-          path: pettycash-app.zip
+          name: pettycash-apk-${{ github.run_number }}
+          path: apk-out/
           retention-days: 30
