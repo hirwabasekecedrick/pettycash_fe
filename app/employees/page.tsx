@@ -134,7 +134,7 @@ export default function EmployeesPage() {
     <DashboardLayout>
       <div className="space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-row sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-gray-900">Employees</h1>
             <p className="text-sm text-gray-500">{employees.length} member{employees.length !== 1 ? 's' : ''} registered</p>
@@ -143,7 +143,7 @@ export default function EmployeesPage() {
             onClick={openCreate}
             className="flex items-center gap-2 bg-primary text-white px-4 py-2.5 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors shadow-sm"
           >
-            <Plus className="w-4 h-4" /> Add Employee
+            <Plus className="w-4 h-4" /> Add New
           </button>
         </div>
 
@@ -180,7 +180,7 @@ export default function EmployeesPage() {
                     <th className="px-5 py-3 text-left font-medium text-gray-500">Name</th>
                     <th className="px-5 py-3 text-left font-medium text-gray-500 hidden sm:table-cell">Email</th>
                     <th className="px-5 py-3 text-left font-medium text-gray-500 hidden md:table-cell">Department</th>
-                    <th className="px-5 py-3 text-left font-medium text-gray-500">Role</th>
+                    <th className="px-5 py-3 text-left font-medium text-gray-500 hidden sm:block">Role</th>
                     <th className="px-5 py-3 text-right font-medium text-gray-500">Actions</th>
                   </tr>
                 </thead>
@@ -194,13 +194,13 @@ export default function EmployeesPage() {
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{emp.name}</p>
-                            <p className="text-xs text-gray-400 sm:hidden">{emp.email}</p>
+                            <p className="text-xs text-gray-400 sm:hidden">{emp.role}</p>
                           </div>
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-gray-600 hidden sm:table-cell">{emp.email}</td>
                       <td className="px-5 py-3.5 text-gray-600 hidden md:table-cell">{emp.department || '—'}</td>
-                      <td className="px-5 py-3.5">
+                      <td className="px-5 py-3.5 hidden sm:block">
                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                           emp.role === 'ACCOUNTANT' ? 'bg-secondary/10 text-secondary' : 'bg-gray-100 text-gray-600'
                         }`}>

@@ -16,7 +16,17 @@ import {
   CreditCard,
   ChevronRight,
   Settings,
+  User,
+  ChevronDown,
 } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+} from '@/components/ui/dropdown-menu';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, roles: ['EMPLOYEE', 'ACCOUNTANT'] },
@@ -155,8 +165,30 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               {allowed.find(n => pathname === n.href || pathname.startsWith(n.href + '/'))?.label || 'Dashboard'}
             </h2>
           </div>
-          <span className="hidden sm:block text-sm text-gray-500">
-            {new Date().toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+          <span className="text-sm text-gray-500">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="flex items-center gap-1 p-2 rounded-full hover:bg-gray-100 transition-colors outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuLabel>
+                  <p className="text-sm font-semibold text-gray-900 truncate">{user.name}</p>
+                  <p className="text-xs font-normal text-gray-500 capitalize truncate">{user.email}</p>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/settings')} className="text-gray-700">
+                  <User />
+                  My Account
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout} className="text-red-500 focus:text-red-600 focus:bg-red-50">
+                  <LogOut />
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </span>
         </header>
 
