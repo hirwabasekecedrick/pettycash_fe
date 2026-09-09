@@ -6,6 +6,9 @@ import { useRouter } from 'next/navigation';
 import { Lock, Mail, Loader2 } from 'lucide-react';
 import { API_BASE } from '@/lib/api';
 import toast from 'react-hot-toast';
+import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import Image from 'next/image';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -14,6 +17,7 @@ export default function LoginPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
   const router = useRouter();
+  const [active, setActive] = useState(false)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,24 +51,24 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50/50 p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100">
-        <div className="bg-primary p-8 text-white text-center">
-          <h1 className="text-3xl font-bold tracking-tight mb-2">Petty Cash Pro</h1>
-          <p className="text-primary-foreground/80">Manage your expenses seamlessly</p>
+      <div className="w-full max-w-md bg-white overflow-hidden">
+        <div className="w-full flex justify-center items-center p-4">
+          <Image src="/vectors/login_vector.png" alt="Logo" width={400} height={400} />
         </div>
-        
-        <div className="p-8">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="p-2 text-primary text-left">
+          <h1 className="text-3xl font-bold tracking-tight mb-1">Sign In</h1>
+          <p className="text-primary/80">Enter your credentials to continue</p>
+        </div>
+
+        <div className="p-8 px-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
               <div className="p-3 bg-red-50 text-red-600 rounded-lg text-sm font-medium animate-in fade-in slide-in-from-top-2">
                 {error}
               </div>
             )}
-            
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700" htmlFor="email">
-                Email Address
-              </label>
+
+            <div className="space-y-1">
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <Mail className="h-5 w-5" />
@@ -82,9 +86,6 @@ export default function LoginPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700" htmlFor="password">
-                Password
-              </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
                   <Lock className="h-5 w-5" />
@@ -100,11 +101,18 @@ export default function LoginPage() {
                 />
               </div>
             </div>
-
-            <button
+            <div className="flex justify-between items-center">
+              <div className="">
+                <p>Keep me signed in</p>
+              </div>
+              <div className="flex items-center justify-end">
+                <Switch />
+              </div>
+            </div>
+            <Button
               type="submit"
               disabled={isSubmitting}
-              className="w-full flex items-center justify-center py-2.5 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+              className="w-full flex items-center justify-center py-5.5 px-4 border border-transparent rounded-full shadow-sm text-sm font-bold text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {isSubmitting ? (
                 <>
@@ -112,9 +120,14 @@ export default function LoginPage() {
                   Signing in...
                 </>
               ) : (
-                'Sign in to your account'
+                'Sign in'
               )}
-            </button>
+            </Button>
+            <div className="flex justify-center items-center p-2">
+              <a href="http://example.com" target="_blank" rel="noopener noreferrer">
+                <span>Enroll your organization</span>
+              </a>
+            </div>
           </form>
         </div>
       </div>
