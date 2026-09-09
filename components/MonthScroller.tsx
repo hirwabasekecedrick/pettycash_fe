@@ -32,12 +32,12 @@ export default function MonthScroller({ year, value, onChange }: MonthScrollerPr
 
   // Function to determine the dynamic styles based on distance from selected month
   const getStyles = (dist: number) => {
-    if (dist === 0) return "bg-green-500 border-green-500 text-white shadow-lg shadow-green-600/40 font-bold scale-110 z-20";
-    if (dist === 1) return "bg-green-300 border-green-300 text-white shadow-md shadow-green-500/20 scale-100 z-10";
-    if (dist === 2) return "bg-green-200 border-green-200 text-green-950 scale-90 z-0";
-    if (dist === 3) return "bg-green-100 border-green-100 text-green-900 scale-80 opacity-90";
-    if (dist === 4) return "bg-green-50 border-green-100 text-green-800 scale-70 opacity-80";
-    return "bg-white border-gray-100 text-gray-400 scale-60 opacity-60 hover:opacity-100 hover:bg-gray-50";
+    if (dist === 0) return "bg-primary text-primary-foreground border-primary shadow-lg shadow-primary/40 font-bold scale-110 z-20";
+    if (dist === 1) return "bg-primary/30 border-primary/30 text-primary shadow-md shadow-primary/20 scale-100 z-10";
+    if (dist === 2) return "bg-primary/20 border-primary/20 text-primary scale-90 z-0";
+    if (dist === 3) return "bg-primary/10 border-primary/10 text-primary/80 scale-80 opacity-90";
+    if (dist === 4) return "bg-primary/5 border-primary/10 text-primary/60 scale-70 opacity-80";
+    return "bg-white border-gray-200 text-gray-400 scale-60 opacity-60 hover:opacity-100 hover:bg-gray-50";
   };
 
   return (
@@ -72,7 +72,7 @@ export default function MonthScroller({ year, value, onChange }: MonthScrollerPr
               className={`snap-center shrink-0 transition-all duration-500 ease-out border rounded-2xl px-6 py-2 w-[100px] flex flex-col items-center justify-center cursor-pointer ${getStyles(dist)}`}
             >
               <span className="text-base uppercase tracking-wider">{monthName}</span>
-              <span className="text-xs mt-1 opacity-80">{year}</span>
+              {/* <span className="text-xs mt-1 opacity-80">{year}</span> */}
             </button>
           );
         })}

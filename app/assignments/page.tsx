@@ -67,6 +67,8 @@ export default function AssignmentsPage() {
   const [error, setError] = useState("");
   const [employeeOpen, setEmployeeOpen] = useState(false);
   const [search, setSearch] = useState("");
+  const [newBudgetItem, setNewBudgetItem] = useState("");
+  const [addingBudgetItem, setAddingBudgetItem] = useState(false);
 
   const fetchAssignments = async (month?: string) => {
     setLoading(true);
@@ -107,6 +109,7 @@ export default function AssignmentsPage() {
     setError("");
     setForm({ assignedToId: "", amount: "" });
     setAuthorizedItems([]);
+    setNewBudgetItem("");
     fetchFormData();
   };
 
@@ -114,6 +117,7 @@ export default function AssignmentsPage() {
     setShowModal(false);
     setForm({ assignedToId: "", amount: "" });
     setAuthorizedItems([]);
+    setNewBudgetItem("");
     setError("");
   };
 
@@ -125,6 +129,23 @@ export default function AssignmentsPage() {
 
   const removeBudgetItem = (name: string) => {
     setAuthorizedItems((prev) => prev.filter((i) => i !== name));
+  };
+
+  const handleCreateBudgetItem = async () => {
+    const name = newBudgetItem.trim();
+    if (!name) return;
+    setAddingBudgetItem(true);
+    try {
+      const item = await api.budgetItems.create(name);
+      setMasterBudgetItems((prev) => [...prev, item]);
+      addBudgetItem(item.name);
+      setNewBudgetItem("");
+      toast.success("Budget item added");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add budget item");
+    } finally {
+      setAddingBudgetItem(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -172,13 +193,13 @@ export default function AssignmentsPage() {
     <DashboardLayout>
       <div className="space-y-5">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex flex-row sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h1 className="text-xl font-bold text-gray-900">
               Cash Assignments
             </h1>
             <p className="text-sm text-gray-500">
-              Total assigned:{" "}
+              Total :{" "}
               <span className="text-primary font-semibold">
                 RWF {totalAssigned.toLocaleString()}
               </span>
@@ -474,9 +495,43 @@ export default function AssignmentsPage() {
                     ✓ All budget items have been selected
                   </p>
                 ) : (
-                  <p className="text-xs text-gray-400 italic py-1">
-                    No budget items found in the database
-                  </p>
+                  <div className="border border-dashed border-gray-200 rounded-xl p-3 bg-gray-50/60">
+                    <p className="text-xs text-gray-500 mb-2">
+                      No budget items yet — add one below so it can be used for
+                      this and future assignments.
+                    </p>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        placeholder="e.g. Office supplies, Transport..."
+                        value={newBudgetItem}
+                        onChange={(e) => setNewBudgetItem(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleCreateBudgetItem();
+                          }
+                        }}
+                        className="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 bg-white"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleCreateBudgetItem}
+                        disabled={addingBudgetItem || !newBudgetItem.trim()}
+                        className="shrink-0 px-3 py-2 bg-primary text-white rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60 flex items-center gap-1.5"
+                      >
+                        {addingBudgetItem ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Plus className="w-3.5 h-3.5" />
+                        )}
+                        Add
+                      </button>
+                    </div>
+                    <p className="text-[11px] text-gray-400 mt-2">
+                      After adding, it will appear in the list for selection.
+                    </p>
+                  </div>
                 )}
               </div>
 

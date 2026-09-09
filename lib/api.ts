@@ -50,6 +50,7 @@ export const api = {
   },
   budgetItems: {
     list: () => apiFetch('/budget-items'),
+    create: (name: string) => apiFetch('/budget-items', { method: 'POST', body: JSON.stringify({ name }) }),
   },
   assignments: {
     list: (params?: { mine?: boolean; month?: string }) => {

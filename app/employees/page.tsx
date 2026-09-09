@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Skeleton } from '@/components/ui/skeleton';
 import toast from 'react-hot-toast';
+import { showUndoToast } from '@/components/UndoToast';
 import {
   Plus, Pencil, Trash2, Search, Loader2, X, Check, AlertCircle, User, Copy, Eye, EyeOff
 } from 'lucide-react';
@@ -37,6 +38,8 @@ export default function EmployeesPage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [pendingDeletes, setPendingDeletes] = useState<Set<number>>(new Set());
+  const [pendingEdits, setPendingEdits] = useState<Set<number>>(new Set());
 
   const [generateNewPwd, setGenerateNewPwd] = useState(false);
 
@@ -89,20 +92,75 @@ export default function EmployeesPage() {
         if (generateNewPwd) {
           payload.generateNewPassword = true;
         }
-        const res = await api.employees.update(editing.id, payload);
-        if (res.generatedPassword) {
-          setGeneratedPassword(res.generatedPassword);
-          setShowGenPwd(false);
+
+        // Password resets cannot be undone, so commit immediately
+        if (generateNewPwd) {
+          const res = await api.employees.update(editing.id, payload);
+          if (res.generatedPassword) {
+            setGeneratedPassword(res.generatedPassword);
+            setShowGenPwd(false);
+          }
+          toast.success('Employee updated successfully');
+          await fetchEmployees();
+          setShowModal(false);
+          return;
         }
-        toast.success('Employee updated successfully');
+
+        const previous = employees.find(x => x.id === editing.id) ?? editing;
+        const next = {
+          ...previous,
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          department: form.department || undefined,
+          role: form.role,
+        };
+
+        // Optimistically apply the change, commit to the DB after the undo window
+        setEmployees(prev => prev.map(x => (x.id === editing.id ? next : x)));
+        setShowModal(false);
+        setPendingEdits(prev => new Set(prev).add(editing.id));
+
+        showUndoToast({
+          variant: 'edit',
+          message: `Changes to ${next.name} will be saved`,
+          onCommit: async () => {
+            try {
+              await api.employees.update(editing.id, payload);
+              setPendingEdits(prev => {
+                const s = new Set(prev);
+                s.delete(editing.id);
+                return s;
+              });
+              toast.success('Changes saved');
+            } catch (err: any) {
+              setEmployees(prev => prev.map(x => (x.id === editing.id ? previous : x)));
+              setPendingEdits(prev => {
+                const s = new Set(prev);
+                s.delete(editing.id);
+                return s;
+              });
+              toast.error(err.message || 'Failed to save changes');
+            }
+          },
+          onUndo: () => {
+            setEmployees(prev => prev.map(x => (x.id === editing.id ? previous : x)));
+            setPendingEdits(prev => {
+              const s = new Set(prev);
+              s.delete(editing.id);
+              return s;
+            });
+            toast.success('Changes discarded');
+          },
+        });
       } else {
         const res = await api.employees.create(form);
         setGeneratedPassword(res.generatedPassword);
         setShowGenPwd(false);
         toast.success('Employee created successfully');
+        await fetchEmployees();
+        setShowModal(false);
       }
-      await fetchEmployees();
-      setShowModal(false);
     } catch (err: any) {
       setError(err.message);
       toast.error(err.message || 'Failed to save employee');
@@ -111,17 +169,43 @@ export default function EmployeesPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    try {
-      await api.employees.delete(id);
-      setEmployees(prev => prev.filter(e => e.id !== id));
-      toast.success('Employee deleted successfully');
-    } catch (err: any) {
-      console.error(err);
-      toast.error(err.message || 'Failed to delete employee');
-    } finally {
-      setDeleteId(null);
-    }
+  const handleDelete = (id: number) => {
+    const employee = employees.find(e => e.id === id);
+    const name = employee?.name ?? 'Employee';
+    setDeleteId(null);
+    setPendingDeletes(prev => new Set(prev).add(id));
+
+    showUndoToast({
+      variant: 'delete',
+      message: `${name} will be removed`,
+      onCommit: async () => {
+        try {
+          await api.employees.delete(id);
+          setEmployees(prev => prev.filter(e => e.id !== id));
+          setPendingDeletes(prev => {
+            const s = new Set(prev);
+            s.delete(id);
+            return s;
+          });
+          toast.success(`${name} deleted`);
+        } catch (err: any) {
+          setPendingDeletes(prev => {
+            const s = new Set(prev);
+            s.delete(id);
+            return s;
+          });
+          toast.error(err.message || 'Failed to delete employee');
+        }
+      },
+      onUndo: () => {
+        setPendingDeletes(prev => {
+          const s = new Set(prev);
+          s.delete(id);
+          return s;
+        });
+        toast.success(`${name} kept`);
+      },
+    });
   };
 
   const filtered = employees.filter(e =>
@@ -185,8 +269,11 @@ export default function EmployeesPage() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {filtered.map(emp => (
-                    <tr key={emp.id} className="hover:bg-gray-50/50 transition-colors">
+                  {filtered.map(emp => {
+                    const isDeleting = pendingDeletes.has(emp.id);
+                    const isEditing = pendingEdits.has(emp.id);
+                    return (
+                    <tr key={emp.id} className={`transition-colors ${isDeleting ? 'opacity-50' : 'hover:bg-gray-50/50'}`}>
                       <td className="px-5 py-3.5">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-xs shrink-0">
@@ -194,6 +281,8 @@ export default function EmployeesPage() {
                           </div>
                           <div>
                             <p className="font-medium text-gray-900">{emp.name}</p>
+                            {isDeleting && <p className="text-[11px] font-medium text-red-500">Deleting…</p>}
+                            {isEditing && <p className="text-[11px] font-medium text-primary">Saving changes…</p>}
                             <p className="text-xs text-gray-400 sm:hidden">{emp.role}</p>
                           </div>
                         </div>
@@ -209,16 +298,17 @@ export default function EmployeesPage() {
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <button onClick={() => openEdit(emp)} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-primary transition-colors">
+                          <button onClick={() => openEdit(emp)} disabled={isDeleting} className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-primary transition-colors disabled:pointer-events-none disabled:opacity-40">
                             <Pencil className="w-4 h-4" />
                           </button>
-                          <button onClick={() => setDeleteId(emp.id)} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors">
+                          <button onClick={() => setDeleteId(emp.id)} disabled={isDeleting} className="p-1.5 rounded-lg hover:bg-red-50 text-gray-400 hover:text-red-500 transition-colors disabled:pointer-events-none disabled:opacity-40">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -373,14 +463,17 @@ export default function EmployeesPage() {
               </div>
               <div>
                 <h3 className="font-bold text-gray-900">Delete Employee?</h3>
-                <p className="text-sm text-gray-500">This action cannot be undone.</p>
+                <p className="text-sm text-gray-500">The employee will be removed, but you can undo this within 5 seconds.</p>
               </div>
             </div>
             <div className="flex gap-3">
               <button onClick={() => setDeleteId(null)} className="flex-1 py-2.5 border border-gray-200 rounded-xl text-sm font-medium text-gray-600 hover:bg-gray-50 transition-colors">
                 Cancel
               </button>
-              <button onClick={() => handleDelete(deleteId)} className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors">
+              <button
+                type="button"
+                onClick={() => handleDelete(deleteId)} className="flex-1 py-2.5 bg-red-500 text-white rounded-xl text-sm font-semibold hover:bg-red-600 transition-colors"
+              >
                 Delete
               </button>
             </div>
