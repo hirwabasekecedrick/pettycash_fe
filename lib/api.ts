@@ -75,11 +75,21 @@ export const api = {
           'Idempotency-Key': crypto.randomUUID()
         }
       }),
+    statusOf: (id: number | string) => apiFetch(`/payments/${id}`),
+    payout: (id: number | string) => apiFetch(`/payments/${id}/payout`, { method: 'POST' }),
+    refreshStatus: (id: number | string) => apiFetch(`/payments/${id}/status`, { method: 'POST' }),
   },
   dashboard: {
     stats: (params?: { month?: string }) => {
       const qs = params?.month ? `?month=${params.month}` : '';
       return apiFetch(`/dashboard${qs}`);
     },
+  },
+  wallet: {
+    get: () => apiFetch('/wallet'),
+    update: (data: any) => apiFetch('/wallet', { method: 'PUT', body: JSON.stringify(data) }),
+    refresh: () => apiFetch('/wallet/refresh', { method: 'POST' }),
+    credit: (data: { amount: number; note?: string }) => apiFetch('/wallet/credit', { method: 'POST', body: JSON.stringify(data) }),
+    ledger: () => apiFetch('/wallet/transactions'),
   },
 };

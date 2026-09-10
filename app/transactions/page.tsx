@@ -6,7 +6,8 @@ import { useAuth } from '@/lib/AuthContext';
 import DashboardLayout from '@/components/DashboardLayout';
 import MonthScroller from '@/components/MonthScroller';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Receipt, Search, Loader2, ImageIcon, ChevronDown, ChevronUp } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { Receipt, Search, Loader2, ImageIcon, ChevronDown, ChevronUp, Send, RefreshCw } from 'lucide-react';
 
 interface Payment {
   id: number;
@@ -14,9 +15,17 @@ interface Payment {
   amount: number;
   reason: string;
   images: string[];
+  status?: string;
   createdAt: string;
   employee?: { name: string; email: string; department?: string };
 }
+
+const STATUS_META: Record<string, { label: string; classes: string; pulse?: boolean }> = {
+  PENDING: { label: 'Pending', classes: 'bg-amber-50 text-amber-600' },
+  PROCESSING: { label: 'Processing', classes: 'bg-blue-50 text-blue-600', pulse: true },
+  SUCCESSFUL: { label: 'Paid', classes: 'bg-green-50 text-green-600' },
+  FAILED: { label: 'Failed', classes: 'bg-rose-50 text-rose-600' },
+};
 
 export default function TransactionsPage() {
   const { user } = useAuth();
@@ -24,6 +33,7 @@ export default function TransactionsPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [acting, setActing] = useState<number | null>(null);
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const d = new Date();
@@ -45,6 +55,42 @@ export default function TransactionsPage() {
   );
 
   const totalSpent = filtered.reduce((s, p) => s + p.amount, 0);
+
+  const reload = async () => {
+    setLoading(true);
+    try {
+      const data = await api.payments.list({ month: selectedMonth });
+      setPayments(data);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const sendPayout = async (payment: Payment) => {
+    setActing(payment.id);
+    try {
+      const res = await api.payments.payout(payment.id);
+      toast.success(res.payoutStarted ? 'Payout sent to provider' : 'Payout not sent — check gateway configuration');
+      await reload();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to send payout');
+    } finally {
+      setActing(null);
+    }
+  };
+
+  const checkStatus = async (payment: Payment) => {
+    setActing(payment.id);
+    try {
+      const res = await api.payments.refreshStatus(payment.id);
+      toast.success(`Status: ${res.status || 'unknown'}`);
+      await reload();
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to refresh status');
+    } finally {
+      setActing(null);
+    }
+  };
 
   return (
     <DashboardLayout>
@@ -118,11 +164,19 @@ export default function TransactionsPage() {
                     <div className="flex items-center gap-3 shrink-0">
                       <div className="text-right">
                         <p className="text-sm font-bold text-rose-600">-RWF {p.amount.toLocaleString()}</p>
-                        {p.images.length > 0 && (
-                          <span className="flex items-center gap-1 text-xs text-gray-400 justify-end">
-                            <ImageIcon className="w-3 h-3" /> {p.images.length}
-                          </span>
-                        )}
+                        <div className="flex items-center gap-1.5 justify-end mt-0.5">
+                          {p.status && STATUS_META[p.status] ? (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${STATUS_META[p.status].classes}`}>
+                              {STATUS_META[p.status].pulse && <span className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />}
+                              {STATUS_META[p.status].label}
+                            </span>
+                          ) : null}
+                          {p.images.length > 0 && (
+                            <span className="flex items-center gap-1 text-xs text-gray-400">
+                              <ImageIcon className="w-3 h-3" /> {p.images.length}
+                            </span>
+                          )}
+                        </div>
                       </div>
                       {expanded === p.id ? <ChevronUp className="w-4 h-4 text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-400" />}
                     </div>
@@ -157,6 +211,33 @@ export default function TransactionsPage() {
                                 </a>
                               ))}
                             </div>
+                          </div>
+                        )}
+
+                        {user?.role === 'ACCOUNTANT' && (p.status === 'PENDING' || p.status === 'FAILED' || p.status === 'PROCESSING') && (
+                          <div className="flex flex-wrap gap-2 pt-1">
+                            {(p.status === 'PENDING' || p.status === 'FAILED') && (
+                              <button
+                                type="button"
+                                onClick={() => sendPayout(p)}
+                                disabled={acting === p.id}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-primary text-white rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors disabled:opacity-60"
+                              >
+                                {acting === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+                                Send Payout
+                              </button>
+                            )}
+                            {p.status === 'PROCESSING' && (
+                              <button
+                                type="button"
+                                onClick={() => checkStatus(p)}
+                                disabled={acting === p.id}
+                                className="flex items-center gap-1.5 px-3 py-2 bg-gray-700 text-white rounded-lg text-xs font-semibold hover:bg-gray-800 transition-colors disabled:opacity-60"
+                              >
+                                {acting === p.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                                Check Status
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>

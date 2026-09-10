@@ -15,6 +15,8 @@ import {
   Users,
   ArrowRight,
   Clock,
+  Landmark,
+  RefreshCw,
 } from 'lucide-react';
 
 interface Stats {
@@ -30,6 +32,13 @@ interface Payment {
   reason: string;
   createdAt: string;
   employee?: { name: string };
+}
+
+interface WalletInfo {
+  balance: number;
+  liveBalance: number | null;
+  currency: string;
+  providerConfigured: boolean;
 }
 
 function StatCard({
@@ -65,12 +74,27 @@ export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState<Stats | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [walletInfo, setWalletInfo] = useState<WalletInfo | null>(null);
+  const [walletLoading, setWalletLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(() => {
     const d = new Date();
     return `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}`;
   });
+
+  const fetchWallet = async (silent = true) => {
+    setWalletLoading(true);
+    try {
+      const data = await api.wallet.get();
+      setWalletInfo(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setWalletLoading(false);
+      void silent;
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -89,6 +113,7 @@ export default function DashboardPage() {
       }
     };
     fetchData();
+    if (user?.role === 'ACCOUNTANT') fetchWallet();
   }, [selectedMonth]);
 
   if (loading) {
@@ -112,6 +137,30 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-bold mt-1">{user?.name}</h1>
           <p className="text-sm opacity-70 mt-1 capitalize">{user?.role.toLowerCase()} · {user?.department || 'General'}</p>
         </div>
+
+        {/* Wallet quick card (accountant) */}
+        {isAccountant && (
+          <Link
+            href="/wallet"
+            className="rounded-2xl bg-gradient-to-br from-primary to-secondary text-white p-5 flex items-center justify-between gap-4 hover:shadow-lg transition-shadow"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                <Landmark className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-xs font-medium opacity-80">Organisation Wallet</p>
+                <p className="text-xl font-bold mt-0.5">
+                  {walletInfo ? `${walletInfo.currency} ${(walletInfo.liveBalance ?? walletInfo.balance ?? 0).toLocaleString()}` : '—'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 text-xs opacity-90">
+              {walletLoading ? 'Syncing…' : <RefreshCw className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline">Manage wallet</span>
+            </div>
+          </Link>
+        )}
 
         {/* Timeline Filter */}
         <MonthScroller 

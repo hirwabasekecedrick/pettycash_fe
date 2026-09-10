@@ -172,12 +172,13 @@ export default function NewPaymentPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Vendor Number <span className="text-red-400">*</span>
+                  Recipient Mobile Number <span className="text-red-400">*</span>
                 </label>
                 <input
                   required
                   type="text"
-                  placeholder="e.g. VND-001"
+                  minLength={10}
+                  placeholder="e.g. 078xxx"
                   value={form.vendorNumber}
                   onChange={e => setForm(p => ({ ...p, vendorNumber: e.target.value }))}
                   className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-primary/50 bg-gray-50 focus:bg-white transition-colors"
