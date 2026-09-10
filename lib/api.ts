@@ -92,4 +92,9 @@ export const api = {
     credit: (data: { amount: number; note?: string }) => apiFetch('/wallet/credit', { method: 'POST', body: JSON.stringify(data) }),
     ledger: () => apiFetch('/wallet/transactions'),
   },
+  collections: {
+    list: () => apiFetch('/collections'),
+    create: (data: { amount: number; msisdn: string; note?: string }) => apiFetch('/collections', { method: 'POST', body: JSON.stringify(data) }),
+    check: (id: string) => apiFetch(`/collections/${id}/status`, { method: 'POST' }),
+  },
 };
